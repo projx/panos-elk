@@ -39,3 +39,9 @@ I'll leave this to you!
 ## Major thanks
 
 These configs are heavily based upon articles from https://www.anderikistan.com/, cheers for the great articles. Unfortunately they were a little over engineered for my needs and I had problems using them with ELK 5.x and PanOS v8.x.
+
+## Finally
+If you find any issues or make enhancements please let me know. I don't have time to offer technical support or answer questions. So, if you have issues using this, then please ask on the Elastic.co forums..
+
+## Legal bit
+You can freely copy and butcher this as you like, I claim no rights on this. I offer no gaurantee this works. By downloading this, you acknowledge and accept full liability for any damage or mental anguish usage may cause.
