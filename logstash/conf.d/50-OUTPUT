@@ -1,0 +1,16 @@
+output {
+ 
+    ## Comment out this to stop output to Syslog... Only useful for debuggin..
+    stdout { 
+        codec => rubydebug
+    }
+    
+    if "paloalto" in [tags] {
+        elasticsearch {
+            index => "pa-logs-%{+YYYY.MM.dd}"
+            hosts => ["192.168.11.6:9200"]
+            template => "/etc/logstash/templates/elasticsearch-template.json"
+            template_overwrite => true
+        }
+    }
+}
