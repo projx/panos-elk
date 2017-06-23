@@ -21,10 +21,13 @@ Likewise, my logstash config might seem nuts. Which listens for syslog on 2-3 se
 In each top directory is a conf.d, which contains the loadable configs for each component of ELK, you can either drop the content of these into your existing logstash/conf.d/ or elasticsearch/conf.d/ directory, or simply delete/rename your existing conf.d folders and symlink to the repository/logstash/conf.d directories.
 
 ### Logstash
-Be aware that the logstash config which writes to Elasticsearch (i.e. 50-OUTPUT) load an Elasticsearch template file which allow Elasticsearch to have multiple GeoIP fields (DestinationGeo and SourceGeo), you may need to edit the logstash/conf.d/50-OUTPUT and update the path to the template (which is in logstash/templates/elasticsearch-template.json).
+At minimum you may need to make the follow changes to the logstash/conf.d/50-OUTPUT file
+1. Change the "hosts" parameter to point to your Elasticsearch IP (probably localhost)
+2. Change the "template" parameter path, this must point to the /logstash/templates/elasticsearch-template.json file 
+3. Comment out the stdout { } section (which copies the parsed entries to the syslog, this is only useful for debugging)
 
 ### Firewalls
-The Logstash configs are written to listen for Traffic syslog on TCP/UDP 1514, and also Threat/Web logs on 1515. You will need to configure your Palo Alto device according.. Or you can change the way this works, such as sending your logs to Rsyslog.
+The Logstash configs are written to listen for Traffic syslog on TCP/UDP 1514, and also Threat/Web logs on 1515. You will need to configure your Palo Alto device accordingly.. Or you can change the way this works, such as sending your logs to Rsyslog.
 
 ## Getting Started
 I'll leave this to you!
