@@ -1,0 +1,52 @@
+input {
+  syslog {
+    host => "0.0.0.0"
+    port => 1515
+    type => "pa-web-log"
+    tags => ["web","paloalto","SRC-1515"]
+  }
+}
+
+filter {
+    if [type] == "pa-web-log" {
+        csv {
+            source => "message"
+            columns => ["SourceAddress","DestinationAddress","Application","Category","URL","HTTPMethod","Action","ThreatCategory","ThreatType","ThreatSubType"]
+        }
+    
+#        mutate {
+#            remove_field => [ "message", "raw_message"]
+#        } 
+
+
+            
+        #Geolocate logs that have SourceAddress and if that SourceAddress is a non-RFC1918 address
+        if [SourceAddress] and [SourceAddress] !~ "(^127\.0\.0\.1)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^192\.168\.)|(^169\.254\.)" {
+            geoip {
+                source => "SourceAddress"
+                target => "SourceGeo"
+            }
+            #Delete 0,0 in SourceGeo.location if equal to 0,0
+            if ([SourceGeo.location] and [SourceGeo.location] =~ "0,0") {
+                mutate {
+                replace => [ "SourceGeo.location", "" ]
+                }
+            }
+            }    
+            
+        if [DestinationAddress] and [DestinationAddress] !~ "(^127\.0\.0\.1)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^192\.168\.)|(^169\.254\.)" {
+            geoip {
+                source => "DestinationAddress"
+                target => "DestinationGeo"
+            }
+            #Delete 0,0 in DestinationGeo.location if equal to 0,0
+            if ([DestinationGeo.location] and [DestinationGeo.location] =~ "0,0") {
+                mutate {
+                replace => [ "DestinationAddress.location", "" ]
+                }
+            }
+        }
+    } ## END IF pa-web
+
+}
+

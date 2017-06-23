@@ -1,0 +1,73 @@
+input {
+  syslog {
+    host => "0.0.0.0"
+    port => 1514
+    type => "pa-traffic-log"
+    tags => ["traffic","paloalto","SRC-1514"]
+  }
+}
+
+filter {
+    if [type] == "pa-traffic-log" {
+            grok {
+                match => [ "message", "(\d\d\d\d/\d\d\/\d\d) (\d\d:\d\d\:\d\d),%{GREEDYDATA:raw_message}" ]
+            }
+
+        csv {
+            source => "raw_message"
+            columns => ["SerialNum","LogEventType","LogEventSubType","ConfigVersion","GenerateTime","SourceAddress","DestinationAddress","NATSourceIP","NATDestinationIP","Rule","SourceUser","DestinationUser","Application","VirtualSystem","SourceZone","DestinationZone","InboundInterface","OutboundInterface","LogAction","TimeLogged","SessionID","RepeatCount","SourcePort","DestinationPort","NATSourcePort","NATDestinationPort","Flags","IPProtocol","Action","Bytes","BytesSent","BytesReceived","Packets","StartTime","ElapsedTimeInSec","Category","Padding","SeqNo","actionflags","SourceCountry","DestinationCountry","cpadding","pkts_sent","pkts_received","session_end_reason","dgh1", "dgh2","dgh3","dgh4","virtual_sys_name","device_name","action_source","src_vm_uuid","dest_vm_uuid","tunnel_id","parent_session_id","parent_start_time", "tunnel_type"]
+        }
+        
+        date {
+        timezone => "Europe/London"
+        match => [ "GenerateTime", "YYYY/MM/dd HH:mm:ss" ]
+        }
+        
+        mutate {
+        convert => [ "Bytes", "integer" ]
+        convert => [ "BytesReceived", "integer" ]
+        convert => [ "BytesSent", "integer" ]
+        convert => [ "ElapsedTimeInSec", "integer" ]
+        convert => [ "geoip.area_code", "integer" ]
+        convert => [ "geoip.dma_code", "integer" ]
+        convert => [ "geoip.latitude", "float" ]
+        convert => [ "geoip.longitude", "float" ]
+        convert => [ "NATDestinationPort", "integer" ]
+        convert => [ "NATSourcePort", "integer" ]
+        convert => [ "Packets", "integer" ]
+        convert => [ "pkts_received", "integer" ]
+        convert => [ "pkts_sent", "integer" ]
+        convert => [ "seqno", "integer" ]
+        gsub => [ "Rule", " ", "_",
+                    "Application", "( |-)", "_" ]
+      #  remove_field => [ "message", "raw_message" ]
+        }
+            
+        #Geolocate logs that have SourceAddress and if that SourceAddress is a non-RFC1918 address
+        if [SourceAddress] and [SourceAddress] !~ "(^127\.0\.0\.1)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^192\.168\.)|(^169\.254\.)" {
+            geoip {
+                source => "SourceAddress"
+                target => "SourceGeo"
+            }
+            #Delete 0,0 in SourceGeo.location if equal to 0,0
+            if ([SourceGeo.location] and [SourceGeo.location] =~ "0,0") {
+                mutate {
+                replace => [ "SourceGeo.location", "" ]
+                }
+            }
+            }    
+            
+        if [DestinationAddress] and [DestinationAddress] !~ "(^127\.0\.0\.1)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^192\.168\.)|(^169\.254\.)" {
+            geoip {
+                source => "DestinationAddress"
+                target => "DestinationGeo"
+            }
+            #Delete 0,0 in DestinationGeo.location if equal to 0,0
+            if ([DestinationGeo.location] and [DestinationGeo.location] =~ "0,0") {
+                mutate {
+                replace => [ "DestinationAddress.location", "" ]
+                }
+            }
+        }
+    } ## END IF PA-TRAFFIC-LOG
+}

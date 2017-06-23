@@ -1,12 +1,38 @@
-# ELK 5.x  Configs for Palo Alto Firewalls..
+# Logstash, Elastic and Kibana configurations for Palo Alto Networks PanOS v8.x and ELK v5.x
 
-Logstash Parsers:
-- Traffic Logs, based upon config by anderikista.com, but updated with fields for PAN-OS 8.x
+These are the main config files that I've put together for consuming PanOS v8.x syslog into ELK v5.x, this was done as a little home project, where I run a PA-200 and wanted some visibility on traffic. 
 
-Logstash Elasticsearch templates:
-- Source and Destination GEOIP,
+## Prerequesites
 
-To do:
-- Add parser for Web Traffic
+* Thoroughly read this file before usage
+* You must have a Palo Alto Networks firewall
+* A linux server 
+* Elastic Search v5.x installed
+* Logstash v5.x installed
+* Kibana v5.x installed
+
+## Understanding my madness
+I apologise now if the directory structure seems like maddness, but I wanted a layout that I could keep contained in a single location, so I could add all the ELK configs to a single repository and simply symlink where necessary.
+
+Likewise, my logstash config might seem nuts. Which listens for syslog on 2-3 seperate ports, this so that I can send different syslog (traffic, threat etc) and use a seperate config file to distinguish between them (to allow clean seperation of the parsers).
+
+## Installation
+### Confgs
+In each top directory is a conf.d, which contains the loadable configs for each component of ELK, you can either drop the content of these into your existing logstash/conf.d/ or elasticsearch/conf.d/ directory, or simply delete/rename your existing conf.d folders and symlink to the repository/logstash/conf.d directories.
+
+### Logstash
+Be aware that the logstash config which writes to Elasticsearch (i.e. 50-OUTPUT) load an Elasticsearch template file which allow Elasticsearch to have multiple GeoIP fields (DestinationGeo and SourceGeo), you may need to edit the logstash/conf.d/50-OUTPUT and update the path to the template (which is in logstash/templates/elasticsearch-template.json).
+
+### Firewalls
+The Logstash configs are written to listen for Traffic syslog on TCP/UDP 1514, and also Threat/Web logs on 1515. You will need to configure your Palo Alto device according.. Or you can change the way this works, such as sending your logs to Rsyslog.
+
+## Getting Started
+I'll leave this to you!
+
+
+## To do:
 - Add parser for IPS/IDS events
 
+## Major thanks
+
+These configs are heavily based upon articles from https://www.anderikistan.com/, cheers for the great articles. Unfortunately they were a little over engineered for my needs and I had problems using them with ELK 5.x and PanOS v8.x.
